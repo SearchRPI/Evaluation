@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Search Log Visualizations</title>
+</head>
+<body>
+    <h1>Search Log Visualizations</h1>
+    {% for image in images %}
+        <div>
+            <h3>{{ image.replace("_", " ").replace(".png", "").title() }}</h3>
+            <img src="{{ url_for('charts', filename=image) }}" width="600">
+        </div>
+        <hr>
+    {% endfor %}
+</body>
+</html>
