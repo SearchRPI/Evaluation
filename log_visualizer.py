@@ -23,9 +23,13 @@ def fetch_data(db_path='logs.db'):
     # Average response time per user
     cursor.execute("SELECT user_id, AVG(response_time) FROM search_logs GROUP BY user_id")
     avg_response_times = cursor.fetchall()
+    
+    # Searches per hour of day
+    cursor.execute("SELECT strftime('%H', timestamp), COUNT(*) FROM search_logs GROUP BY strftime('%H', timestamp)")
+    hour_counts = cursor.fetchall()
 
     conn.close()
-    return user_counts, query_counts, time_counts, avg_response_times
+    return user_counts, query_counts, time_counts, avg_response_times, hour_counts
 
 def plot_bar_chart(data, title, xlabel, ylabel, save=False):
     if not data:
@@ -93,6 +97,7 @@ if __name__ == "__main__":
     parser.add_argument("--user", action="store_true", help="Show search count per user")
     parser.add_argument("--query", action="store_true", help="Show search count per query")
     parser.add_argument("--time", action="store_true", help="Show search count per day")
+    parser.add_argument("--hour", action="store_true", help="Show search volume by hour of day")
     parser.add_argument("--avg", action="store_true", help="Show average response time per user")
     parser.add_argument("--save", action="store_true", help="Save graphs as PNG instead of showing them")
     parser.add_argument("--trend", action="store_true", help="Show time-series line chart of searches per day")
@@ -100,7 +105,7 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    user_data, query_data, time_data, avg_data = fetch_data()
+    user_data, query_data, time_data, avg_data, hour_data = fetch_data()
 
     if args.user:
         plot_bar_chart(user_data, "Searches Per User", "User ID", "Search Count", save=args.save)
@@ -116,6 +121,11 @@ if __name__ == "__main__":
         plot_bar_chart(time_data, "Searches Per Day", "Date", "Count", save=args.save)
         if args.csv:
             export_to_csv(time_data, "searches_per_day.csv")
+            
+    if args.hour:
+        plot_bar_chart(hour_data, "Searches by Hour of Day", "Hour", "Count", save=args.save)
+        if args.csv:
+            export_to_csv(avg_data, "searches_per_hour.csv")
 
     if args.avg:
         plot_bar_chart(avg_data, "Average Response Time Per User", "User ID", "Avg Response Time (s)", save=args.save)
@@ -128,10 +138,11 @@ if __name__ == "__main__":
             export_to_csv(time_data, "searches_per_day.csv")  # Reuse same data
 
     # If no options passed, show all by default
-    if not any([args.user, args.query, args.time, args.avg, args.trend]):
+    if not any([args.user, args.query, args.time, args.avg, args.trend, args.hour]):
         plot_bar_chart(user_data, "Searches Per User", "User ID", "Search Count", save=args.save)
         plot_bar_chart(query_data, "Searches Per Query", "Search Query", "Count", save=args.save)
         plot_bar_chart(time_data, "Searches Per Day", "Date", "Count", save=args.save)
         plot_bar_chart(avg_data, "Average Response Time Per User", "User ID", "Avg Response Time (s)", save=args.save)
+        plot_bar_chart(hour_data, "Searches by Hour of Day", "Hour", "Search Count", save=args.save)
         plot_line_chart(time_data, "Searches Per Day", "Date", "Count", save=args.save)
 
