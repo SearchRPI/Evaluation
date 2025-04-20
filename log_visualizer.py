@@ -6,6 +6,7 @@ import os
 from datetime import datetime
 import statistics
 import textwrap
+from utils.db_utils import fetch_data
 
 # Default database path
 DEFAULT_DB = 'logs.db'
@@ -19,32 +20,6 @@ BANNER = textwrap.dedent("""
     |        SEARCH LOG VISUALIZER TOOL       |
     ==========================================
 """)
-
-def fetch_data(db_path=DEFAULT_DB):
-    """Fetch various aggregate stats from the logs database."""
-    conn = sqlite3.connect(db_path)
-    cursor = conn.cursor()
-
-    cursor.execute("SELECT user_id, COUNT(*) FROM search_logs GROUP BY user_id")
-    user_counts = cursor.fetchall()
-
-    cursor.execute("SELECT search_query, COUNT(*) FROM search_logs GROUP BY search_query")
-    query_counts = cursor.fetchall()
-
-    cursor.execute("SELECT DATE(timestamp), COUNT(*) FROM search_logs GROUP BY DATE(timestamp)")
-    time_counts = cursor.fetchall()
-
-    cursor.execute("SELECT user_id, AVG(response_time) FROM search_logs GROUP BY user_id")
-    avg_response_times = cursor.fetchall()
-
-    cursor.execute("SELECT strftime('%H', timestamp), COUNT(*) FROM search_logs GROUP BY strftime('%H', timestamp)")
-    hour_counts = cursor.fetchall()
-
-    cursor.execute("SELECT response_time FROM search_logs")
-    response_times = [row[0] for row in cursor.fetchall()]
-
-    conn.close()
-    return user_counts, query_counts, time_counts, avg_response_times, hour_counts, response_times
 
 def print_usage_tips():
     print("\n💡 Usage Tips:")
@@ -144,8 +119,7 @@ if __name__ == "__main__":
     parser.add_argument("--db", type=str, default=DEFAULT_DB, help="Specify an alternate database path")
 
     args = parser.parse_args()
-    print("
-📊 Log Visualizer starting with options:")
+    print("📊Log Visualizer starting with options:")
     for arg, val in vars(args).items():
         print(f"  --{arg}: {val}")
 
@@ -191,5 +165,4 @@ if __name__ == "__main__":
 
     print_summary_report(user_data, query_data, time_data, response_times)
     print_usage_tips()
-    print("
-✅ Visualization complete.")
+    print("Visualization complete!")
