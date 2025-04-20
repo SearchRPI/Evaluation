@@ -1,12 +1,9 @@
-import sqlite3
-import matplotlib.pyplot as plt
 import argparse
-import csv
 import os
-from datetime import datetime
-import statistics
 import textwrap
 from utils.db_utils import fetch_data
+from utils.plot_utils import plot_bar_chart, plot_line_chart
+from utils.export_utils import export_to_csv, print_summary_report, print_usage_tips
 
 # Default database path
 DEFAULT_DB = 'logs.db'
@@ -21,88 +18,6 @@ BANNER = textwrap.dedent("""
     ==========================================
 """)
 
-def print_usage_tips():
-    print("\n💡 Usage Tips:")
-    print("- Use --top 5 to only show the top 5 most common entries")
-    print("- Add --save to export graphs as PNGs")
-    print("- Use --csv to export table data to CSV")
-    print("- Combine multiple flags to compare metrics at once (e.g., --user --avg --trend)")
-
-def plot_bar_chart(data, title, xlabel, ylabel, save=False, top_n=None):
-    if not data:
-        print(f"No data to plot for {title}")
-        return
-
-    data = sorted(data, key=lambda x: x[1], reverse=True)
-    if top_n:
-        data = data[:top_n]
-
-    labels, values = zip(*data)
-    plt.figure(figsize=(10, 6))
-    plt.bar(labels, values, color="skyblue")
-    plt.title(title)
-    plt.xlabel(xlabel)
-    plt.ylabel(ylabel)
-    plt.xticks(rotation=45)
-    plt.grid(axis="y", linestyle="--", alpha=0.7)
-    plt.tight_layout()
-
-    if save:
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = os.path.join(EXPORT_DIR, title.lower().replace(" ", "_") + f"_{timestamp}.png")
-        plt.savefig(filename)
-        print(f"📁 Saved graph to {filename}")
-    else:
-        plt.show()
-
-def plot_line_chart(data, title, xlabel, ylabel, save=False):
-    if not data:
-        print(f"No data to plot for {title}")
-        return
-
-    data = sorted(data, key=lambda x: x[0])
-    dates, counts = zip(*data)
-    plt.figure(figsize=(10, 6))
-    plt.plot(dates, counts, marker='o', linestyle='-', color='darkgreen')
-    plt.title(title)
-    plt.xlabel(xlabel)
-    plt.ylabel(ylabel)
-    plt.xticks(rotation=45)
-    plt.grid(True, linestyle="--", alpha=0.6)
-    plt.tight_layout()
-
-    if save:
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = os.path.join(EXPORT_DIR, title.lower().replace(" ", "_") + f"_{timestamp}.png")
-        plt.savefig(filename)
-        print(f"📁 Saved graph to {filename}")
-    else:
-        plt.show()
-
-def export_to_csv(data, filename):
-    if not data:
-        print(f"No data to export to {filename}")
-        return
-
-    path = os.path.join(EXPORT_DIR, filename)
-    with open(path, "w", newline="", encoding="utf-8") as f:
-        writer = csv.writer(f)
-        writer.writerow(["Label", "Value"])
-        writer.writerows(data)
-
-    print(f"✅ Exported data to {path}")
-
-def print_summary_report(user_data, query_data, time_data, response_times):
-    print("📌 Summary Report")
-    print(f"- Total users logged: {len(user_data)}")
-    print(f"- Total unique queries: {len(query_data)}")
-    print(f"- Total active days: {len(time_data)}")
-    print(f"- Most recent activity date: {time_data[-1][0] if time_data else 'N/A'}")
-
-    if response_times:
-        print(f"- Response time stats (s): min={min(response_times):.3f}, max={max(response_times):.3f}, mean={statistics.mean(response_times):.3f}, median={statistics.median(response_times):.3f}")
-    else:
-        print("- No response time data available.")
 
 if __name__ == "__main__":
     print(BANNER)
