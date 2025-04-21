@@ -1,5 +1,7 @@
 import argparse
 import sqlite3
+import csv
+from datetime import datetime
 
 def filter_logs(db_path, user=None, query=None, start=None, end=None, flagged=None, only_flagged=False):
     conn = sqlite3.connect(db_path)
@@ -42,6 +44,13 @@ def print_logs(logs, flagged=None):
         flag = " 🚩" if flagged and flagged.lower() in query.lower() else ""
         print(f"[{timestamp}] user='{user_id}' query='{query}' time={resp_time:.3f}s{flag}")
 
+def export_logs_to_csv(logs, filename):
+    with open(filename, "w", newline="", encoding="utf-8") as f:
+        writer = csv.writer(f)
+        writer.writerow(["timestamp", "user_id", "search_query", "response_time"])
+        writer.writerows(logs)
+    print(f"\n✅ Exported {len(logs)} logs to '{filename}'")
+
 def main():
     parser = argparse.ArgumentParser(description="Filter and view logs from logs.db")
     parser.add_argument("--db", type=str, default="logs.db", help="Path to SQLite database")
@@ -51,6 +60,7 @@ def main():
     parser.add_argument("--end", help="End timestamp (YYYY-MM-DD or full ISO format)")
     parser.add_argument("--flagged", help="Flag specific search terms of interest")
     parser.add_argument("--only-flagged", action="store_true", help="Only show logs that include flagged terms")
+    parser.add_argument("--export", type=str, help="Export filtered logs to a CSV file")
 
     args = parser.parse_args()
 
@@ -63,7 +73,11 @@ def main():
         flagged=args.flagged,
         only_flagged=args.only_flagged
     )
+
     print_logs(logs, flagged=args.flagged)
+
+    if args.export:
+        export_logs_to_csv(logs, args.export)
 
 if __name__ == "__main__":
     main()
